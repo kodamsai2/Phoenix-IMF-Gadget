@@ -15,7 +15,7 @@ const authenticateUser = async (req, res, next) => {
             return res.status(404).send({ message: "Internal server error during authenticating user, User not found", success: false});
         } 
         
-        req.userId = user.id;
+        req.userId = user._id;
         next();
     } catch (error) {
         console.log(error);

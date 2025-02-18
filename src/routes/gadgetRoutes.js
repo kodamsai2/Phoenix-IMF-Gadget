@@ -1,12 +1,45 @@
-const router = require("express").Router();
+const gadgetRoutes = require("express").Router();
+const { param, query, body } = require("express-validator");
+const { gadgetStatus } = require("../constants.js");
 const authenticateUser = require("../middlewares/authenticationMiddleware.js");
-const { getAllGadgetsBasedOnStatus, createGadget, updateGadgetInfo, deleteGadget, selfDestructGadget } = require("../controllers/gadgetController");
+const { 
+    getAllGadgetsBasedOnStatus, 
+    createGadget, 
+    updateGadgetInfo, 
+    deleteGadget, 
+    selfDestructGadget 
+} = require("../controllers/gadgetController");
 
-router.get("/", authenticateUser, getAllGadgetsBasedOnStatus);
-router.post("/", authenticateUser, createGadget);
-router.patch("/:id", authenticateUser, updateGadgetInfo);
-router.delete("/:id", authenticateUser, deleteGadget);
 
-router.post('/:id/self-destruct', authenticateUser,selfDestructGadget);
+gadgetRoutes.get("/",
+    authenticateUser,
+    query("status").optional({ checkFalsy: true }).isString().trim().isIn(gadgetStatus),
+    getAllGadgetsBasedOnStatus
+);
 
-module.exports = router;
+gadgetRoutes.post("/",
+    authenticateUser, 
+    createGadget
+);
+
+gadgetRoutes.patch("/:id",
+    authenticateUser,
+    param('id').notEmpty().trim().isUUID(),
+    body('status').optional({ checkFalsy: true }).isString().trim().isIn(gadgetStatus),
+    body('name').optional({ checkFalsy: true }).isString().trim().isLength({ min: 3, max: 50 }),
+    updateGadgetInfo
+);
+
+gadgetRoutes.delete("/:id",
+    authenticateUser,
+    param('id').notEmpty().trim().isUUID(), 
+    deleteGadget
+);
+
+gadgetRoutes.post('/:id/self-destruct',
+    authenticateUser,
+    param('id').notEmpty().trim().isUUID(),
+    selfDestructGadget
+);
+
+module.exports = gadgetRoutes;

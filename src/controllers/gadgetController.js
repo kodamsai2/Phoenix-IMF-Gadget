@@ -1,21 +1,22 @@
+require('dotenv').config();
 const Gadget = require('../models/gadgetModel');
+const { validationResult } = require('express-validator');
 
 const getAllGadgetsBasedOnStatus = async (req, res) => {
-    const validStatus = ["Available", "Deployed", "Destroyed", "Decommissioned"]
-    if(req.query.status){
-        if(!validStatus.includes(req.query.status)) {
-            return res.status(400).send({ message: 'Invalid status', success: false });
-        }
+    // Validate the request
+    const result = validationResult(req.query);
+    if(!result.isEmpty()){
+        return res.status(400).json({ message: "Require all fields", success: false, error: result.array() });
     }
     
-    const status  = req.query.status ? [req.query.status] : ["Available", "Deployed", "Destroyed", "Decommissioned"];
-
+    const status  = req.query.status ? req.query.status : null;
     try {
-        const gadgets = await Gadget.findAll({ where: { status } });
+        const gadgets = status ? await Gadget.findAll({ where: { status } }) : await Gadget.findAll();
 
         const formattedGadgets = gadgets.map(gadget => {
+            const { _id, userId, ...safeGadgetData } = gadget.dataValues;
             return {
-                ...gadget.dataValues,
+                ...safeGadgetData,
                 description: `${gadget.name} - ${Math.floor(Math.random() * 100)}% success probability`
             }
         })
@@ -25,17 +26,15 @@ const getAllGadgetsBasedOnStatus = async (req, res) => {
         console.log(error);
         return res.status(500).send({ message: "Internal server error during retrieving gadgets", success: false, error: error.message });
     }
-
 }
 
 const createGadget = async (req, res) => {
-    const userId  = req.userId;
-    if (!userId) {
+    if (!req.userId) {
         return res.status(400).send({ message: 'User id is required', success: false });
     }
 
     try {
-        const result = await fetch('https://random-word-form.herokuapp.com/random/animal');
+        const result = await fetch(process.env.RANDOM_WORD_GENERATOR_URL);
         if (!result.ok) {
             return res.status(500).send({ message: 'Error fetching random name', status: false });
         }
@@ -44,12 +43,13 @@ const createGadget = async (req, res) => {
         const name = `The ${jsonData[0]}`
         req.gadgetName = name;
         
-        const gadget = await Gadget.create({ name, userId });
+        const gadget = await Gadget.create({ name, userId: req.userId });
         if (!gadget) {
-            return res.status(500).send({ message: 'Gadget not created', status: false });
+            return res.status(500).send({ message: 'Internal server error while creating Gadget', status: false });
         }
         
-        return res.status(201).send({ message: "Succesfully created new gadget",success: true, data: gadget });
+        const { _id, userId, ...safeGadgetData } = gadget.dataValues;
+        return res.status(201).send({ message: "Succesfully created new gadget",success: true, data: safeGadgetData });
     } catch (error) {
         console.log(error);
         if (error.name === 'SequelizeUniqueConstraintError') {
@@ -60,18 +60,20 @@ const createGadget = async (req, res) => {
 }
 
 const updateGadgetInfo = async (req, res) => {
-    const { id } = req.params;
-    if (!id) {
-        return res.status(400).send({ message: 'Gadget id is required', success: false });
+    // Validate the request
+    const result = validationResult(req);
+    if(!result.isEmpty()){
+        return res.status(400).json({ message: "Require all fields", success: false, error: result.array() });
     }
 
+    const { id } = req.params;
     const { name, status } = req.body;
     if (!name && !status) {
         return res.status(400).send({ message: 'At least one of "name" or "status" is required', success: false });
     }
 
     try {
-        const gadget = await Gadget.findByPk(id);
+        const gadget = await Gadget.findOne({ where: { gadgetUUID: id } });
         if (!gadget) {
             return res.status(404).send({ message: 'Gadget not found', success: false });
         }
@@ -80,7 +82,8 @@ const updateGadgetInfo = async (req, res) => {
         gadget.status = status ? status : gadget.status;
         await gadget.save();
 
-        return res.status(200).send({ message: "Succesfully updated gadget info", success: false, data: gadget });
+        const { _id, userId, ...safeGadgetData } = gadget.dataValues;
+        return res.status(200).send({ message: "Succesfully updated gadget info", success: false, data: safeGadgetData });
     } catch (error) {
         console.log(error);
         if (error.name === 'SequelizeUniqueConstraintError') {
@@ -92,13 +95,15 @@ const updateGadgetInfo = async (req, res) => {
 }
 
 const deleteGadget = async (req, res) => {
-    const { id } = req.params;
-    if (!id) {
-        return res.status(400).send({ message: 'Gadget id is required', success: false });
+    // Validate the request
+    const result = validationResult(req);
+    if(!result.isEmpty()){
+        return res.status(400).json({ message: "Require all fields", success: false, error: result.array() });
     }
 
+    const { id } = req.params;
     try {
-        const gadget = await Gadget.findByPk(id);
+        const gadget = await Gadget.findOne({ where: { gadgetUUID: id } });
         if (!gadget) {
             return res.status(404).send({ message: 'Gadget not found', success: false });
         }
@@ -107,7 +112,8 @@ const deleteGadget = async (req, res) => {
         gadget.decommissionedAt = new Date();
         await gadget.save();
 
-        return res.status(200).send({ message: "Succesfully decommissioned gadget", success: true, data: gadget });
+        const { _id, userId, ...safeGadgetData } = gadget.dataValues;
+        return res.status(200).send({ message: "Succesfully decommissioned gadget", success: true, data: safeGadgetData });
     }catch (error) {
         console.log(error);
         res.status(500).send({ message: "Internal server error during delete gadget", success:false, error: error.message });
@@ -115,13 +121,15 @@ const deleteGadget = async (req, res) => {
 }
 
 const selfDestructGadget = async (req, res) => {
-    const { id } = req.params;
-    if (!id) {
-        return res.status(400).send({ message: 'Gadget id is required', success: false });
+    // Validate the request
+    const result = validationResult(req);
+    if(!result.isEmpty()){
+        return res.status(400).json({ message: "Require all fields", success: false, error: result.array() });
     }
 
+    const { id } = req.params;
     try {
-        const gadget = await Gadget.findByPk(id);
+        const gadget = await Gadget.findOne({ where: { gadgetUUID: id } });
         if (!gadget) {
             return res.status(404).send({ message: 'Gadget not found', success: false });
         }
@@ -131,7 +139,8 @@ const selfDestructGadget = async (req, res) => {
         gadget.selfDestructCode = confirmationCode;
         await gadget.save();
         
-        return res.status(200).send({ message: "Succesfully initialized self destruct of gadget", success: true, data: gadget });     
+        const { _id, userId, ...safeGadgetData } = gadget.dataValues;
+        return res.status(200).send({ message: "Succesfully initialized self destruct of gadget", success: true, data: safeGadgetData });     
     }catch (error) {
         console.log(error);
         return res.status(500).send({ message: "Internal server error during self destruct gadget", success: false, error: error.message });

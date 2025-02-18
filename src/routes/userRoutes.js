@@ -1,7 +1,17 @@
-const router = require("express").Router();
-const { createUser, signin } = require("../controllers/userController");
+const userRoutes = require("express").Router();
+const { body } = require("express-validator");
+const { createUser, signIn } = require("../controllers/userController");
 
-router.post("/signup", createUser);
-router.post("/signin", signin);
+userRoutes.post("/signup",
+    body('name').notEmpty().isString().trim().isLength({ min: 3, max: 50 }),
+    body('password').notEmpty().isString().trim().isLength({ min: 3, max: 50 }), 
+    createUser
+);
 
-module.exports = router;
+userRoutes.post("/signin", 
+    body('name').notEmpty().isString().trim().isLength({ min: 3, max: 50 }),
+    body('password').notEmpty().isString().trim().isLength({ min: 3, max: 50 }), 
+    signIn
+);
+
+module.exports = userRoutes;

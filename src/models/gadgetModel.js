@@ -3,10 +3,15 @@ const { sequelize } = require('../configs/db.js');
 const User = require('./userModel.js');
 
 const Gadget = sequelize.define('Gadget', {
-        id: {
+        _id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
+        },
+        gadgetUUID: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
-            primaryKey: true 
+            unique: true,
         },
         name: {
             type: DataTypes.STRING,
@@ -29,7 +34,7 @@ const Gadget = sequelize.define('Gadget', {
             allowNull: true,
         },
         userId: {
-            type: DataTypes.UUID,
+            type: DataTypes.INTEGER,
             allowNull: false,
         }
     }

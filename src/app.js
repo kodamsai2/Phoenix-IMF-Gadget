@@ -26,7 +26,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Global Error: Internal Server Error', success: false });
 });
 
-// Start the server
+// Start the server, after connecting to the database.
 connectToDB()
   .then(() => {
     console.log("Database connected. Starting server...");
