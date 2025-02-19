@@ -52,7 +52,6 @@ ServerHost URL: https://phoenix-imf-gadget.onrender.com (Since I am using the Re
 
 Docket Image URL: https://hub.docker.com/r/kodamsai2/imf-gadget-api
 
-docker pull kodamsai2/imf-gadget-api
 
 ### To Run API server using Docker
 #### Prerequisites
