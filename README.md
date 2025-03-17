@@ -1,5 +1,16 @@
 # Phoenix: IMF Gadget API
 
+### Problem Statement: [Link](https://docs.google.com/document/d/18Gh_9mFr1vUH-o7Jvuu4gC_zU3f9cMjJ/edit?usp=sharing&ouid=101447500351170008204&rtpof=true&sd=true)
+
+
+## Technologies Used
+
+- **Backend:** Node.js, Express  
+- **Database:** Neon (Serverless PostgreSQL), Sequelize ORM  
+- **Authentication:** JSON Web Token (JWT), bcryptjs  
+- **Security:** Helmet, CORS, Compression 
+- **Deployment:** Render
+
 ## Getting Started
 ### Prerequisites
 - Node.js
@@ -18,6 +29,16 @@
     ```bash
     npm install
     ```
+### Environment Variables
+
+Create a `.env` file in the root directory and add the following variables:  
+
+```plaintext
+PORT= 3000
+DATABASE_URL= your_database_url_here
+RANDOM_WORD_GENERATOR_URL=https://random-word.kodamsai2.workers.dev/ 
+JWT_SECRET= IMF_SECRET
+```
 
 ### Running the API
 To start the API server at port: 3000, run:
@@ -48,7 +69,7 @@ all routes require 'X-Authorization' header with value of jwtToken
 ### Links
 Postman Documentation URL: https://documenter.getpostman.com/view/28166640/2sAYXEEyLs
 
-ServerHost URL: https://phoenix-imf-gadget.onrender.com (Since I am using the Render free tier, it takes some time to get a response to the initial request.)
+ServerHost URL: https://phoenix-imf-gadget.onrender.com (Since I'm using the Render free tier, it takes some time to receive a response to the initial request.)
 
 Docket Image URL: https://hub.docker.com/r/kodamsai2/imf-gadget-api
 
